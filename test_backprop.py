@@ -1,17 +1,22 @@
+from nn import *
+from cartpole import *
 
+NUM_EPISODES = 100
+LEARNING_RATE = 0.1
 
-"""
-
-Steps:
-
-1. Run the forward pass for the current CartPoleState
-2. Select an action based on the Network output
-3. Act on the Network output to get the next state
-4. Calculate the target Q-value
-5. Calculate the loss and update the network weights to minimize it. 
-
-"""
-
+# Checking my backpropogation logic and verifying through this example:
+# https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/
 
 if __name__ == "__main__":
+  l1 = Layer(2, 2)
+  l1_arr = np.array([[1,1],[1,1]])
+  l1.set_weights(l1_arr)
+  l2 = Layer(3, 2)
+  l2_arr = np.array([[1,1],[1,1]])
+  l2.set_weights(l2_arr)
+
+  nn = Network([l1, l2])
+
+  nn.forward(network_input=[1,1])
   
+  print(nn.backward(target_output=[1,0]))
