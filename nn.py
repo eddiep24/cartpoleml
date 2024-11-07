@@ -84,6 +84,19 @@ class Layer:
     print("New layer:\n{}".format(self.layer))
     return np.dot(doutput, self.layer.T)  # Return gradient for the previous layer
 
+
+"""
+Usage:
+Instatiate layers and their dimensions, ex:
+layer1 = Layer(2, 2) creates a 2 x 2 layer with four weights
+layer2 = Layer(2, 4) creates a 2 x 4 layer with eight total weights
+
+Then connect them with the network (put layers in an array):
+network = Network( [layer1, layer2] )
+
+Run a forward pass:
+netowork.forward(input_array)
+"""
 class Network:
   def __init__(self, layers, learning_rate=1):
     self.layers = layers
