@@ -1,5 +1,7 @@
 import numpy as np
 
+CLIPPING_LIMIT = 10
+
 def relu(x):
     return np.maximum(0, x)
 
@@ -10,7 +12,8 @@ class Layer:
   def __init__(self, d1, d2):  # cols, rows
     self.d1 = d1
     self.d2 = d2
-    self.layer = np.random.rand(self.d1, self.d2) * 0.1  # Initialize with small values
+    limit = np.sqrt(2.0 / (d1 + d2))
+    self.layer = np.random.uniform(-limit, limit, (d1, d2)) # Xavier Initialization
     self.hidden_layer = None
       
   def __repr__(self):
@@ -22,6 +25,7 @@ class Layer:
     """        
     self.inputs = np.array(inputs, dtype=np.float64)  # Convert inputs to NumPy array
     self.z = np.dot(self.inputs, self.layer)  # Linear transformation
+    self.z = np.clip(self.z, -CLIPPING_LIMIT, CLIPPING_LIMIT)
     self.hidden_layer = relu(self.z)  # Apply activation function and store it
     return self.hidden_layer
 
@@ -73,15 +77,17 @@ class Layer:
       ∂L/∂W1 = x.T @ [((y_pred - y_true) * relu'(z2)) @ W2.T * relu'(z1)]
 
     """
-
+    doutput = np.clip(doutput, -1, 1)
     # Compute gradient of loss with respect to weights (chain rule)
     doutput = doutput * relu_derivative(self.z)  # doutput = ∂h1/∂z1 * ∂L/∂W2
+    doutput = np.clip(doutput, -1, 1)
     dweights = np.dot(self.inputs.T, doutput)  # dweights = doutput * ∂z1/∂W1
+    dweights = np.clip(dweights, -1, 1)
     
     # Update weights
-    print("Previous layer:\n{}".format(self.layer))
+    # print("Previous layer:\n{}".format(self.layer))
     self.layer -= learning_rate * dweights
-    print("New layer:\n{}".format(self.layer))
+    # print("New layer:\n{}".format(self.layer))
     return np.dot(doutput, self.layer.T)  # Return gradient for the previous layer
 
 
@@ -109,7 +115,7 @@ class Network:
     output = network_input
     for layer in self.layers:
         output = layer(output)
-    return output.flatten()  # Return flattened output for single input
+    return np.clip(output.flatten(), -CLIPPING_LIMIT, CLIPPING_LIMIT)  # Return flattened output for single input
       
   def parameters(self):
     all_params = []

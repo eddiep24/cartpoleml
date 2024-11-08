@@ -7,9 +7,9 @@ Main implmenetation that trains a fully connected neural network using backpropo
 from nn import *
 from cartpole import *
 
-NUM_EPISODES = 1
-LEARNING_RATE = 0.1
-DISCOUNT_FACTOR = 1
+NUM_EPISODES = 10000
+LEARNING_RATE = 0.05
+DISCOUNT_FACTOR = 0.99
 
 def main():
   # This architecture seems successful: https://pythonprogramming.net/openai-cartpole-neural-network-example-machine-learning-tutorial/
@@ -35,6 +35,7 @@ def main():
       state_array = state.to_array().reshape(1, -1)  # Reshape to (1, 4) for batch processing
       
       action_probabilities = network.forward(state_array)
+      print(action_probabilities)
       action = np.argmax(action_probabilities)
       
       # Go forward one time unit in environment
@@ -56,8 +57,6 @@ def main():
       network.backward(target_output)
       state = next_state
         
-    print(f"Episode {episode+1}/{NUM_EPISODES} - Total Reward: {total_reward}")
-
     print(f"Episode {episode+1}/{NUM_EPISODES} - Total Reward: {total_reward}")
 
 
