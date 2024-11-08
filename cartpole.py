@@ -8,13 +8,13 @@ class CartPoleState:
         self.pole_velocity = pole_velocity
 
     def to_array(self):
-        return np.array([self.cart_position, self.cart_velocity, self.pole_angle, self.pole_velocity])
+      return np.array([self.cart_position, self.cart_velocity, self.pole_angle, self.pole_velocity])
 
     def __repr__(self):
-        return (f"CartPoleState(cart_position={self.cart_position}, "
-                f"cart_velocity={self.cart_velocity}, "
-                f"pole_angle={self.pole_angle}, "
-                f"pole_velocity={self.pole_velocity})")
+      return (f"CartPoleState(cart_position={self.cart_position}, "
+              f"cart_velocity={self.cart_velocity}, "
+              f"pole_angle={self.pole_angle}, "
+              f"pole_velocity={self.pole_velocity})")
 
 
 class CartPoleEnvironment:

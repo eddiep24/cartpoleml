@@ -4,11 +4,67 @@ Main implmenetation that trains a fully connected neural network using backpropo
 
 """
 
+from nn import *
+from cartpole import *
+
+NUM_EPISODES = 1
+LEARNING_RATE = 0.1
+DISCOUNT_FACTOR = 1
 
 def main():
-  pass
+  # This architecture seems successful: https://pythonprogramming.net/openai-cartpole-neural-network-example-machine-learning-tutorial/
+  # TODO: Could add a dropout rate like them.
+  layer1 = Layer(4, 128)
+  layer2 = Layer(128, 256)
+  layer3 = Layer(256, 512)
+  layer4 = Layer(512, 256)
+  layer5 = Layer(256, 128)
+  layer6 = Layer(128, 2)
+
+  network = Network([layer1, layer2, layer3, layer4, layer5, layer6], learning_rate=LEARNING_RATE)
+
+  # This is similar to how OpenAI implements the gym library
+  env = CartPoleEnvironment()
+
+  for episode in range(NUM_EPISODES):
+    state = env.reset()
+    done = False
+    total_reward = 0
+    
+    while not done:
+      # Convert state to numpy array and reshape for network input
+      state_array = state.to_array().reshape(1, -1)  # Reshape to (1, 4) for batch processing
+      
+      # Get action probabilities and choose action
+      action_probabilities = network.forward(state_array)
+      action = np.argmax(action_probabilities)
+      
+      # Take action in environment
+      next_state, reward, done = env.step(action)
+      total_reward += reward
+      
+      # Prepare target output for training
+      target_output = np.zeros_like(action_probabilities)
+      
+      if done:
+        target_output[action] = reward
+      else:
+        # Convert next_state to array and reshape
+        next_state_array = next_state.to_array().reshape(1, -1)
+        next_q_values = network.forward(next_state_array)
+        target_output[action] = reward + DISCOUNT_FACTOR * np.max(next_q_values)
+      
+      # Train network
+      network.backward(target_output)
+      state = next_state
+        
+    print(f"Episode {episode+1}/{NUM_EPISODES} - Total Reward: {total_reward}")
+
+    print(f"Episode {episode+1}/{NUM_EPISODES} - Total Reward: {total_reward}")
+
 
 
 
 if __name__ == "__main__":
   main()
+  
