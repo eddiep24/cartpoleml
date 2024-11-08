@@ -32,14 +32,12 @@ def main():
     total_reward = 0
     
     while not done:
-      # Convert state to numpy array and reshape for network input
       state_array = state.to_array().reshape(1, -1)  # Reshape to (1, 4) for batch processing
       
-      # Get action probabilities and choose action
       action_probabilities = network.forward(state_array)
       action = np.argmax(action_probabilities)
       
-      # Take action in environment
+      # Go forward one time unit in environment
       next_state, reward, done = env.step(action)
       total_reward += reward
       
@@ -54,7 +52,7 @@ def main():
         next_q_values = network.forward(next_state_array)
         target_output[action] = reward + DISCOUNT_FACTOR * np.max(next_q_values)
       
-      # Train network
+      # Train
       network.backward(target_output)
       state = next_state
         
