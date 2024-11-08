@@ -1,6 +1,6 @@
 import numpy as np
 
-CLIPPING_LIMIT = 10
+
 
 def relu(x):
     return np.maximum(0, x)
@@ -12,6 +12,7 @@ class Layer:
   def __init__(self, d1, d2):  # cols, rows
     self.d1 = d1
     self.d2 = d2
+    # Without this initialization the weights converge toward infinity
     limit = np.sqrt(2.0 / (d1 + d2))
     self.layer = np.random.uniform(-limit, limit, (d1, d2)) # Xavier Initialization
     self.hidden_layer = None
@@ -25,7 +26,7 @@ class Layer:
     """        
     self.inputs = np.array(inputs, dtype=np.float64)  # Convert inputs to NumPy array
     self.z = np.dot(self.inputs, self.layer)  # Linear transformation
-    self.z = np.clip(self.z, -CLIPPING_LIMIT, CLIPPING_LIMIT)
+    self.z = np.clip(self.z, -10, 10)
     self.hidden_layer = relu(self.z)  # Apply activation function and store it
     return self.hidden_layer
 
@@ -115,8 +116,12 @@ class Network:
     output = network_input
     for layer in self.layers:
         output = layer(output)
-    return np.clip(output.flatten(), -CLIPPING_LIMIT, CLIPPING_LIMIT)  # Return flattened output for single input
+    return np.clip(output.flatten(), -10, 10)  # Return flattened output for single input
       
+  def compute_loss(self, predicted_output, target_output):
+    """Calculates Mean Squared Error (MSE) loss."""
+    return np.mean((predicted_output - target_output) ** 2)
+
   def parameters(self):
     all_params = []
     for layer in self.layers:

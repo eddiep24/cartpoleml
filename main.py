@@ -7,7 +7,7 @@ Main implmenetation that trains a fully connected neural network using backpropo
 from nn import *
 from cartpole import *
 
-NUM_EPISODES = 10000
+NUM_EPISODES = 1000
 LEARNING_RATE = 0.05
 DISCOUNT_FACTOR = 0.99
 
@@ -35,7 +35,6 @@ def main():
       state_array = state.to_array().reshape(1, -1)  # Reshape to (1, 4) for batch processing
       
       action_probabilities = network.forward(state_array)
-      print(action_probabilities)
       action = np.argmax(action_probabilities)
       
       # Go forward one time unit in environment
@@ -53,10 +52,13 @@ def main():
         next_q_values = network.forward(next_state_array)
         target_output[action] = reward + DISCOUNT_FACTOR * np.max(next_q_values)
       
+      # print("Current Loss", network.compute_loss(action_probabilities, target_output))
+      
       # Train
       network.backward(target_output)
       state = next_state
         
+    # Total reward is a decent benchmark for an increase in performance.
     print(f"Episode {episode+1}/{NUM_EPISODES} - Total Reward: {total_reward}")
 
 
