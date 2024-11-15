@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 class CartPoleState:
     def __init__(self, cart_position, cart_velocity, pole_angle, pole_velocity):
@@ -119,3 +121,138 @@ class CartPoleEnvironment:
 
   def render(self):
       print(f"Current state: {self.state}")
+
+      
+
+class CartPoleAnimator:
+    def __init__(self, neural_network, num_episodes):
+        self.NUM_EPISODES = num_episodes
+        self.fig, self.ax = plt.subplots(figsize=(8, 6))
+        self.ax.set_xlim(-2.4, 2.4)
+        self.ax.set_ylim(-1, 2)
+        self.ax.grid(True, axis='x', linestyle='-', alpha=0.2)
+        
+        # Initialize cart and pole objects
+        self.cart = plt.Rectangle((-0.1, -0.05), 0.2, 0.1, fc='blue')
+        self.ax.add_patch(self.cart)
+        self.pole, = self.ax.plot([], [], 'r-', lw=3)
+        
+        self.text = self.ax.text(0.02, 0.95, '', transform=self.ax.transAxes)
+        
+        self.env = CartPoleEnvironment()
+        self.nn = neural_network
+        
+        # Animation state
+        self.state = self.env.reset()
+        self.episode = 0
+        self.total_reward = 0
+        self.done = False
+        
+        # Learning parameters
+        self.gamma = 0.99
+        self.epsilon = 1.0
+        self.epsilon_decay = 0.995
+        self.epsilon_min = 0.01
+        self.replay_buffer = []
+        self.batch_size = 32
+        
+    def init_animation(self):
+        self.cart.set_xy((-0.1, -0.05))
+        self.pole.set_data([], [])
+        return self.cart, self.pole, self.text
+        
+    def select_action(self, state_array):
+        if np.random.random() < self.epsilon:
+            return np.random.choice([0, 1])
+        # Reshape state array to 2D array (batch size of 1)
+        state_input = state_array.reshape(1, -1)
+        action_values = self.nn.forward(state_input)
+        return np.argmax(action_values)
+        
+    def train_network(self):
+        if len(self.replay_buffer) < self.batch_size:
+            return
+            
+        # Sample random batch
+        batch_indices = np.random.choice(len(self.replay_buffer), self.batch_size, replace=False)
+        states = []
+        targets = []
+        
+        for idx in batch_indices:
+            state, action, reward, next_state, done = self.replay_buffer[idx]
+            
+            # Reshape states to 2D arrays (batch size of 1)
+            state_input = state.reshape(1, -1)
+            next_state_input = next_state.reshape(1, -1)
+            
+            # Get current Q values
+            current_q = self.nn.forward(state_input)
+            target = current_q.copy()
+            
+            if done:
+                target[0][action] = reward
+            else:
+                # Get next Q values
+                next_q = self.nn.forward(next_state_input)
+                target[0][action] = reward + self.gamma * np.max(next_q)
+            
+            states.append(state)
+            targets.append(target[0])  # Remove the extra dimension
+            
+        # Convert lists to numpy arrays and reshape
+        states = np.array(states)
+        targets = np.array(targets)
+        
+        # Perform backpropagation on the batch
+        self.nn.backward(targets)
+            
+    def animate(self, frame):
+        if self.done:
+            self.episode += 1
+            if self.episode >= self.NUM_EPISODES:
+                plt.close()
+                return self.cart, self.pole, self.text
+            
+            print(f"Episode {self.episode + 1} ended with total reward: {self.total_reward}")
+            self.state = self.env.reset()
+            self.total_reward = 0
+            self.done = False
+            
+            # Decay epsilon
+            self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+            
+            # Train on replay buffer
+            self.train_network()
+            
+        # Get current state and select action
+        state_array = self.state.to_array()
+        action = self.select_action(state_array)
+        
+        # Take action and observe result
+        next_state, reward, self.done = self.env.step(action)
+        next_state_array = next_state.to_array()
+        
+        # Store experience in replay buffer
+        self.replay_buffer.append((state_array, action, reward, next_state_array, self.done))
+        if len(self.replay_buffer) > 10000:
+            self.replay_buffer.pop(0)
+            
+        self.total_reward += reward
+        self.state = next_state
+        
+        # Update visualization
+        cart_position = self.state.cart_position
+        pole_angle = self.state.pole_angle
+        
+        self.cart.set_x(cart_position - 0.1)
+        
+        pole_length = 0.5
+        pole_x = [cart_position, cart_position + pole_length * np.sin(pole_angle)]
+        pole_y = [0, pole_length * np.cos(pole_angle)]
+        self.pole.set_data(pole_x, pole_y)
+        
+        self.text.set_text(f'Episode: {self.episode + 1}/{self.NUM_EPISODES}\n'
+                          f'Reward: {self.total_reward:.1f}\n'
+                          f'Epsilon: {self.epsilon:.2f}')
+        
+        return self.cart, self.pole, self.text

@@ -156,17 +156,46 @@ class Network:
         all_params.extend(layer.parameters())
     return all_params
       
-  def backward(self, target_output):
-    """
-    Backprop presupposes knowledge of activation function, weights, hidden layers, all of which is known.
-    """
-    self.target_output = target_output
-    # Calculate the error (loss) between the predicted values and target values
-    doutput = self.layers[-1].hidden_layer - self.target_output
-    
-    # Backpropagate
-    for layer in reversed(self.layers):
-      doutput = layer.backward(doutput, self.learning_rate)
+  def backward(self, doutput, learning_rate):
+      """
+      Compute gradients and update weights using backpropagation.
+      
+      Parameters:
+      - doutput: gradient from the next layer
+      - learning_rate: learning rate for weight updates
+      
+      Returns:
+      - gradient for the previous layer
+      """
+      doutput = np.array(doutput)  # Ensure numpy array
+      if len(doutput.shape) == 1:
+          doutput = doutput.reshape(1, -1)  # Add batch dimension if needed
+          
+      # Compute activation function derivative
+      if LOSS_FUNCTION == "sigmoid":
+          doutput = doutput * sigmoid_derivative(self.z)
+      elif LOSS_FUNCTION == "relu":
+          doutput = doutput * relu_derivative(self.z)
+      else:
+          print("Error: Undefined Activation Function")
+          exit(1)
+          
+      doutput = np.clip(doutput, -1, 1)
+      
+      # Ensure inputs are 2D
+      if len(self.inputs.shape) == 1:
+          self.inputs = self.inputs.reshape(1, -1)
+          
+      # Compute weight gradients
+      dweights = np.dot(self.inputs.T, doutput)
+      dweights = np.clip(dweights, -1, 1)
+      
+      # Update weights
+      self.layer -= learning_rate * dweights
+      
+      # Compute and return gradient for previous layer
+      return np.dot(doutput, self.layer.T)
+
 
   def __repr__(self):
     return f"Network(layers={self.layers})"
