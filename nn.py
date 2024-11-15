@@ -1,12 +1,27 @@
 import numpy as np
 
-
+LOSS_FUNCTION = "sigmoid"
 
 def relu(x):
     return np.maximum(0, x)
 
 def relu_derivative(x):
     return (x > 0).astype(float)
+
+def sigmoid(x):
+    """
+    Sigmoid activation function.
+    Formula: 1 / (1 + exp(-x))
+    """
+    return 1 / (1 + np.exp(-x))
+
+def sigmoid_derivative(x):
+    """
+    Derivative of the sigmoid function.
+    Formula: sigmoid(x) * (1 - sigmoid(x))
+    """
+    sig = sigmoid(x)
+    return sig * (1 - sig)
 
 class Layer:
   def __init__(self, d1, d2):  # cols, rows
@@ -27,7 +42,14 @@ class Layer:
     self.inputs = np.array(inputs, dtype=np.float64)  # Convert inputs to NumPy array
     self.z = np.dot(self.inputs, self.layer)  # Linear transformation
     self.z = np.clip(self.z, -10, 10)
-    self.hidden_layer = relu(self.z)  # Apply activation function and store it
+    if (LOSS_FUNCTION == "sigmoid"):
+      self.hidden_layer = sigmoid(self.z)
+    elif (LOSS_FUNCTION == "relu"):
+      self.hidden_layer = relu(self.z) 
+    else:
+      print("Error: Undefined Activation Function")
+      exit(1)
+
     return self.hidden_layer
 
   def set_weights(self, new_layer):
@@ -80,7 +102,13 @@ class Layer:
     """
     doutput = np.clip(doutput, -1, 1)
     # Compute gradient of loss with respect to weights (chain rule)
-    doutput = doutput * relu_derivative(self.z)  # doutput = ∂h1/∂z1 * ∂L/∂W2
+    if (LOSS_FUNCTION == "sigmoid"):
+      doutput = doutput * sigmoid_derivative(self.z)  # doutput = ∂h1/∂z1 * ∂L/∂W2
+    elif (LOSS_FUNCTION == "relu"):
+      doutput = doutput * relu_derivative(self.z)  # doutput = ∂h1/∂z1 * ∂L/∂W2
+    else:
+      print("Error: Undefined Activation Function")
+      exit(1)
     doutput = np.clip(doutput, -1, 1)
     dweights = np.dot(self.inputs.T, doutput)  # dweights = doutput * ∂z1/∂W1
     dweights = np.clip(dweights, -1, 1)
