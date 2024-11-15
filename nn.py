@@ -163,6 +163,7 @@ class Network:
     self.target_output = target_output
     # Calculate the error (loss) between the predicted values and target values
     doutput = self.layers[-1].hidden_layer - self.target_output
+    print(doutput)
     
     # Backpropagate
     for layer in reversed(self.layers):
