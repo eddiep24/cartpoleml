@@ -3,18 +3,18 @@ import numpy as np
 class CartPoleState:
     def __init__(self, cart_position, cart_velocity, pole_angle, pole_velocity):
         self.cart_position = cart_position
-        self.cart_velocity = cart_velocity
+        self.cart_velocity = cart_velocity 
         self.pole_angle = pole_angle
         self.pole_velocity = pole_velocity
 
     def to_array(self):
-      return np.array([self.cart_position, self.cart_velocity, self.pole_angle, self.pole_velocity])
+        return np.array([self.cart_position, self.cart_velocity, self.pole_angle, self.pole_velocity])
 
     def __repr__(self):
-      return (f"CartPoleState(cart_position={self.cart_position}, "
-              f"cart_velocity={self.cart_velocity}, "
-              f"pole_angle={self.pole_angle}, "
-              f"pole_velocity={self.pole_velocity})")
+        return (f"CartPoleState(cart_position={self.cart_position}, "
+                f"cart_velocity={self.cart_velocity}, "
+                f"pole_angle={self.pole_angle}, "
+                f"pole_velocity={self.pole_velocity})")
 
 
 class CartPoleEnvironment:
@@ -102,7 +102,7 @@ class CartPoleEnvironment:
                 (self.length * (4.0 / 3.0 - self.masspole * cos_theta**2 / self.total_mass))
     x_acc = temp - self.masspole * self.length * theta_acc * cos_theta / self.total_mass
 
-    # Update state using Euler’s method
+    # Update state using Euler's method
     x += self.tau * x_dot
     x_dot += self.tau * x_acc
     theta += self.tau * theta_dot
@@ -118,5 +118,4 @@ class CartPoleEnvironment:
     return self.state, reward, done
 
   def render(self):
-    # Visualization logic could go here 
-    print(f"Current state: {self.state}")
+      print(f"Current state: {self.state}")
