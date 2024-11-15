@@ -9,7 +9,7 @@ from cartpole import *
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-NUM_EPISODES = 1000
+NUM_EPISODES = 15
 LEARNING_RATE = 0.05
 DISCOUNT_FACTOR = 0.99
 

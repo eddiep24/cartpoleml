@@ -122,7 +122,52 @@ class CartPoleEnvironment:
   def render(self):
       print(f"Current state: {self.state}")
 
+class CartPoleLearningMetrics:
+  def __init__(self, num_episodes):
+    self.num_episodes = num_episodes
+    self.rewards_history = []
+    self.errors_history = []
+    self.current_episode = 0
       
+  def update_metrics(self, episode_reward, episode_error):
+    """Update metrics after each episode"""
+    self.rewards_history.append(episode_reward)
+    self.errors_history.append(episode_error)
+    self.current_episode += 1
+      
+  def plot_metrics(self):
+      """Create and display a plot for rewards"""
+      fig, ax = plt.subplots(figsize=(10, 6))
+      episodes = range(1, len(self.rewards_history) + 1)
+      
+      # Plot rewards with rolling average
+      ax.plot(episodes, self.rewards_history, 'b-', alpha=0.3, label='Raw')
+      window = min(10, len(self.rewards_history))
+      if window > 0:
+          rolling_mean = np.convolve(self.rewards_history, np.ones(window)/window, mode='valid')
+          ax.plot(range(window, len(self.rewards_history) + 1), rolling_mean, 'b-', label='Rolling Average')
+      ax.set_xlabel('Episode')
+      ax.set_ylabel('Total Reward')
+      ax.set_title('Total Reward vs Episode')
+      ax.grid(True)
+      ax.legend()
+      
+      plt.show()
+
+    
+    # Plot errors with rolling average
+    # ax2.plot(episodes, self.errors_history, 'r-', alpha=0.3, label='Raw')
+    # if window > 0:
+    #     rolling_mean = np.convolve(self.errors_history, np.ones(window)/window, mode='valid')
+    #     ax2.plot(range(window, len(self.errors_history) + 1), rolling_mean, 'r-', label='Rolling Average')
+    # ax2.set_xlabel('Episode')
+    # ax2.set_ylabel('Average Error')
+    # ax2.set_title('Training Error vs Episode')
+    # ax2.grid(True)
+    # ax2.legend()
+    
+    # plt.tight_layout()
+
 
 class CartPoleAnimator:
     def __init__(self, neural_network, num_episodes):
@@ -155,7 +200,9 @@ class CartPoleAnimator:
         self.epsilon_min = 0.01
         self.replay_buffer = []
         self.batch_size = 32
-        
+        self.metrics = CartPoleLearningMetrics(num_episodes)
+        self.episode_errors = []
+ 
     def init_animation(self):
         self.cart.set_xy((-0.1, -0.05))
         self.pole.set_data([], [])
@@ -173,7 +220,7 @@ class CartPoleAnimator:
         if len(self.replay_buffer) < self.batch_size:
             return
             
-        # Sample random batch
+        total_error = 0
         batch_indices = np.random.choice(len(self.replay_buffer), self.batch_size, replace=False)
         states = []
         targets = []
@@ -181,69 +228,76 @@ class CartPoleAnimator:
         for idx in batch_indices:
             state, action, reward, next_state, done = self.replay_buffer[idx]
             
-            # Reshape states to 2D arrays (batch size of 1)
             state_input = state.reshape(1, -1)
             next_state_input = next_state.reshape(1, -1)
             
-            # Get current Q values
             current_q = self.nn.forward(state_input)
             target = current_q.copy()
             
             if done:
                 target[0][action] = reward
             else:
-                # Get next Q values
                 next_q = self.nn.forward(next_state_input)
                 target[0][action] = reward + self.gamma * np.max(next_q)
             
-            states.append(state)
-            targets.append(target[0])  # Remove the extra dimension
+            # Calculate error for this sample
+            error = np.mean((target - current_q) ** 2)
+            print("Error = {}".format(error))
+            total_error += error
             
-        # Convert lists to numpy arrays and reshape
+            states.append(state)
+            targets.append(target[0])
+            
+        # Store average error for this batch
+        self.episode_errors.append(total_error / self.batch_size)
+        
         states = np.array(states)
         targets = np.array(targets)
-        
-        # Perform backpropagation on the batch
         self.nn.backward(targets)
             
     def animate(self, frame):
         if self.done:
+            # Episode finished, update metrics and reset environment
+            episode_error = np.mean(self.episode_errors) if self.episode_errors else 0
+            self.metrics.update_metrics(self.total_reward, episode_error)
+            self.episode_errors = []  # Reset errors for the next episode
+            
+            print(f"Episode {self.episode + 1} ended with total reward: {self.total_reward}")
+            
+            # Increment episode counter
             self.episode += 1
+            
             if self.episode >= self.NUM_EPISODES:
+                # All episodes complete, plot metrics and stop animation
+                self.metrics.plot_metrics()
                 plt.close()
                 return self.cart, self.pole, self.text
             
-            print(f"Episode {self.episode + 1} ended with total reward: {self.total_reward}")
+            # Reset environment and learning parameters for the next episode
             self.state = self.env.reset()
             self.total_reward = 0
             self.done = False
-            
-            # Decay epsilon
             self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
-            
-            # Train on replay buffer
             self.train_network()
-            
-        # Get current state and select action
+        
+        # Normal step processing
         state_array = self.state.to_array()
         action = self.select_action(state_array)
-        
-        # Take action and observe result
         next_state, reward, self.done = self.env.step(action)
         next_state_array = next_state.to_array()
         
-        # Store experience in replay buffer
+        # Store transition in replay buffer
         self.replay_buffer.append((state_array, action, reward, next_state_array, self.done))
         if len(self.replay_buffer) > 10000:
             self.replay_buffer.pop(0)
-            
+        
+        # Update rewards and state
         self.total_reward += reward
         self.state = next_state
         
         # Update visualization
         cart_position = self.state.cart_position
         pole_angle = self.state.pole_angle
-        
         self.cart.set_x(cart_position - 0.1)
         
         pole_length = 0.5
