@@ -217,43 +217,43 @@ class CartPoleAnimator:
         return np.argmax(action_values)
         
     def train_network(self):
-        if len(self.replay_buffer) < self.batch_size:
-            return
-            
-        total_error = 0
-        batch_indices = np.random.choice(len(self.replay_buffer), self.batch_size, replace=False)
-        states = []
-        targets = []
+      if len(self.replay_buffer) < self.batch_size:
+        return
+          
+      total_error = 0
+      batch_indices = np.random.choice(len(self.replay_buffer), self.batch_size, replace=False)
+      states = []
+      targets = []
+
+      for idx in batch_indices:
+        state, action, reward, next_state, done = self.replay_buffer[idx]
         
-        for idx in batch_indices:
-            state, action, reward, next_state, done = self.replay_buffer[idx]
-            
-            state_input = state.reshape(1, -1)
-            next_state_input = next_state.reshape(1, -1)
-            
-            current_q = self.nn.forward(state_input)
-            target = current_q.copy()
-            
-            if done:
-                target[0][action] = reward
-            else:
-                next_q = self.nn.forward(next_state_input)
-                target[0][action] = reward + self.gamma * np.max(next_q)
-            
-            # Calculate error for this sample
-            error = np.mean((target - current_q) ** 2)
-            print("Error = {}".format(error))
-            total_error += error
-            
-            states.append(state)
-            targets.append(target[0])
-            
-        # Store average error for this batch
-        self.episode_errors.append(total_error / self.batch_size)
+        state_input = state.reshape(1, -1)
+        next_state_input = next_state.reshape(1, -1)
         
-        states = np.array(states)
-        targets = np.array(targets)
-        self.nn.backward(targets)
+        current_q = self.nn.forward(state_input)
+        target = current_q.copy()
+        
+        if done:
+            target[0][action] = reward
+        else:
+            next_q = self.nn.forward(next_state_input)
+            target[0][action] = reward + self.gamma * np.max(next_q)
+        
+        # Calculate error for this sample
+        error = np.mean((target - current_q) ** 2)
+        print("Error = {}".format(error))
+        total_error += error
+        
+        states.append(state)
+        targets.append(target[0])
+          
+      # Store average error for this batch
+      self.episode_errors.append(total_error / self.batch_size)
+      
+      states = np.array(states)
+      targets = np.array(targets)
+      self.nn.backward(targets)
             
     def animate(self, frame):
         if self.done:

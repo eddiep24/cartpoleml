@@ -9,8 +9,8 @@ from cartpole import *
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-NUM_EPISODES = 15
-LEARNING_RATE = 0.05
+NUM_EPISODES = 100
+LEARNING_RATE = 1
 DISCOUNT_FACTOR = 0.99
 
 def main():
@@ -62,7 +62,17 @@ def main():
     # Total reward is a decent benchmark for an increase in performance.
     print(f"Episode {episode+1}/{NUM_EPISODES} - Total Reward: {total_reward}")
 
-
+#   animator = CartPoleAnimator(network, NUM_EPISODES)
+#   anim = FuncAnimation(
+#     animator.fig,
+#     animator.animate,
+#     init_func=animator.init_animation,
+#     frames=None,
+#     interval=20,
+#     blit=True,
+#     repeat=False
+#   )
+#   plt.show()
 
 
 
