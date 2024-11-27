@@ -27,7 +27,7 @@ class CartPoleEnvironment:
     self.total_mass = self.masspole + self.masscart
     self.length = 0.5  # Half of the pole's length
     self.force_mag = 10.0
-    self.tau = 0.02  # Time step for the simulation
+    self.tau = 0.01  # Time step for the simulation
 
     self.state = None
     self.reset()
